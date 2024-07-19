@@ -1,0 +1,31 @@
+{
+    "name": "food-planner-app",
+    "version": "1.0.0",
+    "description": "A food planner app that generates meal plans based on user goals and preferences.",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js",
+        "client": "cd client && npm start",
+        "dev": "concurrently \"npm run start\" \"npm run client\""
+    },
+    "author": "",
+    "license": "MIT",
+    "dependencies": {
+        "axios": "^0.21.1",
+        "bcryptjs": "^2.4.3",
+        "body-parser": "^1.19.0",
+        "chart.js": "^3.5.1",
+        "cors": "^2.8.5",
+        "dotenv": "^16.4.5",
+        "express": "^4.17.1",
+        "express-validator": "^7.1.0",
+        "jsonwebtoken": "^9.0.2",
+        "mongoose": "^8.5.1",
+        "openai": "^3.0.0",
+        "react-chartjs-2": "^3.0.3"
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    },
+    "proxy": "http://localhost:5050"
+}

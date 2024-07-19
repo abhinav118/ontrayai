@@ -1,0 +1,151 @@
+{
+  "project": {
+    "name": "Food Planner App",
+    "description": "A web application to generate personalized meal plans based on user goals, profile data, and food preferences.",
+    "frontend": {
+      "framework": "ReactJS",
+      "components": [
+        {
+          "name": "InputForm",
+          "description": "Form to take user goals, current profile data, food preferences, calorie, and number of meals preferences.",
+          "fields": [
+            "Age",
+            "Weight (kg)",
+            "Height (cm)",
+            "Gender",
+            "Goal (kg)",
+            "Calorie Intake",
+            "Meals per day",
+            "Activity Level",
+            "Dietary Preferences"
+          ],
+          "submitButton": {
+            "text": "Generate",
+            "loader": "Icon loader when clicked"
+          }
+        },
+        {
+          "name": "MealPlan",
+          "description": "Displays the generated meal plan with meal breakdown by time and pie chart for macronutrients.",
+          "fields": [
+            "Meal Name",
+            "Meal Calories",
+            "Pie Chart (Protein in green, Carbs in yellow, Fat in red)"
+          ],
+          "lightbox": true
+        },
+        {
+          "name": "ProfilePage",
+          "description": "Profile page with user information and settings, using Material-UI for layout and components.",
+          "sections": [
+            "Personal Info",
+            "Bio"
+          ],
+          "tabs": ["Planner", "Profile", "Logout"]
+        }
+      ]
+    },
+    "backend": {
+      "framework": "NodeJS (Express)",
+      "routes": [
+        {
+          "path": "/api/user",
+          "method": "POST",
+          "description": "Register a new user",
+          "fields": [
+            "firstName",
+            "lastName",
+            "email",
+            "phone",
+            "password"
+          ]
+        },
+        {
+          "path": "/api/auth",
+          "method": "POST",
+          "description": "Authenticate user",
+          "fields": [
+            "email",
+            "password"
+          ]
+        },
+        {
+          "path": "/api/generate-meal-plan",
+          "method": "POST",
+          "description": "Generate meal plan based on user input",
+          "fields": [
+            "age",
+            "weight",
+            "height",
+            "gender",
+            "goal",
+            "diet",
+            "calorieIntake",
+            "mealsPerDay",
+            "activityLevel"
+          ]
+        }
+      ],
+      "modules": [
+        "express",
+        "body-parser",
+        "cors",
+        "bcryptjs",
+        "jsonwebtoken",
+        "express-validator",
+        "mongoose"
+      ],
+      "database": {
+        "type": "MongoDB",
+        "schema": {
+          "UserProfile": {
+            "fields": [
+              "firstName",
+              "lastName",
+              "email",
+              "phone",
+              "password",
+              "age",
+              "gender",
+              "weightKg",
+              "heightCm",
+              "goalWeightKg",
+              "dailyCalorieIntake",
+              "mealsPerDay",
+              "activityLevel",
+              "dietaryPreferences"
+            ]
+          }
+        }
+      },
+      "authentication": {
+        "method": "JWT",
+        "secret": "your_jwt_secret"
+      }
+    },
+    "apiIntegration": {
+      "service": "OpenAI",
+      "model": "gpt-4",
+      "endpoints": [
+        {
+          "name": "createChatCompletion",
+          "description": "Generate meal plan",
+          "parameters": {
+            "model": "gpt-4",
+            "messages": [
+              {
+                "role": "system",
+                "content": "You are a meal planner that outputs meal plan with meals, snacks and macronutrients in a valid json."
+              },
+              {
+                "role": "user",
+                "content": "Generate a meal plan for a [gender] aged [age] with a weight of [weight]kg and height of [height]cm. The goal is [goal]. Preferences: [diet]. Total calories: [calorieIntake]. Meals per day: [mealsPerDay]. With Activity level: [activityLevel]"
+              }
+            ],
+            "max_tokens": 3000
+          }
+        }
+      ]
+    }
+  }
+}

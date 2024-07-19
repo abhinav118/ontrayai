@@ -1,0 +1,84 @@
+.form-container {
+  width: 100%;
+  max-width: 600px;
+  padding: 20px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 16px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* .diet-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+} */
+
+.diet-icons {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  /* margin-bottom: 12px; */
+}
+
+.diet-icons .MuiButton-root {
+  flex: 1;
+  min-width: 80px;
+  font-size: 0.75rem;
+  padding: 4px;
+}
+
+.diet-icons .MuiButton-root.selected {
+  background-color: #4ECDC4;
+  color: white;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (max-width: 600px) {
+  .form-container {
+    padding: 16px;
+  }
+
+  .diet-icons {
+    flex-direction: column;
+  }
+
+  .diet-icons .MuiButton-root {
+    width: 100%;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.diet-form {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+.diet-form .MuiButton-root {
+  text-transform: none;
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  min-width: 0;
+}
+
+.diet-form .MuiButton-root.selected {
+  background-color: #4ECDC4;
+  color: white;
+}
+
+.diet-form .MuiFormLabel-root,
+.diet-form .MuiInputLabel-root,
+.diet-form .MuiRadio-root,
+.diet-form .MuiFormControlLabel-label {
+  color: #747D8C;
+}
+
+.diet-form .MuiOutlinedInput-root {
+  background-color: white;
+}
