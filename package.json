@@ -6,7 +6,8 @@
     "scripts": {
         "start": "node server.js",
         "client": "cd client && npm start",
-        "dev": "concurrently \"npm run start\" \"npm run client\""
+        "dev": "concurrently \"npm run start\" \"npm run client\"",
+        "build": "rm -r dist && cd client && react-scripts build && mv build ../dist"
     },
     "author": "",
     "license": "MIT",
@@ -22,7 +23,8 @@
         "jsonwebtoken": "^9.0.2",
         "mongoose": "^8.5.1",
         "openai": "^3.0.0",
-        "react-chartjs-2": "^3.0.3"
+        "react-chartjs-2": "^3.0.3",
+        "react-scripts": "^5.0.1"
     },
     "devDependencies": {
         "concurrently": "^8.2.2"

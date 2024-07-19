@@ -8,6 +8,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { check, validationResult } = require('express-validator');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 app.use(cors()); // Add this line to enable CORS
@@ -22,6 +23,7 @@ const openai = new OpenAIApi(configuration);
 const jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret';
 
 connectDB();
+app.use(express.static(path.join(__dirname, 'dist')));
 
 app.post('/api/user', [
   check('email', 'Please include a valid email').isEmail(),
