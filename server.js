@@ -24,7 +24,7 @@ const jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret';
 
 connectDB();
 app.use(express.static(path.join(__dirname, 'dist')));
-console.log('--API',  process.env.OPEN_AI_KEY);
+console.log('--API',  process.env.OPENAI_API_KEY);
 
 app.post('/api/user', [
   check('email', 'Please include a valid email').isEmail(),
