@@ -16,7 +16,7 @@ app.use(cors()); // Add this line to enable CORS
 app.use(bodyParser.json());
 
 const configuration = new Configuration({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPEN_AI_KEY,
 });
 const openai = new OpenAIApi(configuration);
 
@@ -24,6 +24,7 @@ const jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret';
 
 connectDB();
 app.use(express.static(path.join(__dirname, 'dist')));
+console.log('--API',  process.env.OPEN_AI_KEY);
 
 app.post('/api/user', [
   check('email', 'Please include a valid email').isEmail(),
@@ -36,7 +37,6 @@ app.post('/api/user', [
   }
 
   const { firstName, lastName, email, phone, password } = req.body;
-  console.log('--/api/user Received request body:', req.body);
 
   try {
     let user = await UserProfile.findOne({ email });
