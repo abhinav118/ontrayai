@@ -46,6 +46,7 @@ export default function LandingPage() {
     height: 'auto',
     cursor: 'pointer',
   };
+  
 
   return (
     <ThemeProvider theme={theme}>
@@ -92,6 +93,8 @@ export default function LandingPage() {
           </Typography>
           <Box sx={{ width: '100%', maxWidth: 500 }}>
             <InputForm />
+           
+   
           </Box>
         </Container>
       </Box>

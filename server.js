@@ -1,121 +1,53 @@
 const express = require('express');
-const bodyParser = require('body-parser');
-const { Configuration, OpenAIApi } = require('openai');
+const cors = require('cors');
+const OpenAI = require('openai');
 require('dotenv').config();
+const bodyParser = require('body-parser');
 const connectDB = require('./db');
 const UserProfile = require('./models/UserProfile');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { check, validationResult } = require('express-validator');
-const cors = require('cors');
-const path = require('path');
 
 const app = express();
-app.use(cors()); // Add this line to enable CORS
+app.use(cors());
+app.use(express.json());
 
-app.use(bodyParser.json());
-
-const configuration = new Configuration({
+const openai = new OpenAI({
   apiKey: process.env.OPEN_AI_KEY,
 });
-const openai = new OpenAIApi(configuration);
 
-const jwtSecret = process.env.JWT_SECRET || 'your_jwt_secret';
 
-connectDB();
-app.use(express.static(path.join(__dirname, 'dist')));
-console.log('--API',  process.env.OPENAI_API_KEY);
 
-app.post('/api/user', [
-  check('email', 'Please include a valid email').isEmail(),
-  check('password', 'Password is required').exists(),
-  check('phone', 'Phone number is required').exists()
-],async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
 
-  const { firstName, lastName, email, phone, password } = req.body;
+// app.use(bodyParser.json());
 
+// const configuration = new Configuration({
+//   apiKey: process.env.OPEN_AI_KEY,
+// });
+
+// const openai = new OpenAIApi(configuration);
+
+app.post('/api/user', async (req, res) => {
+  const { firstName, lastName, email, password } = req.body;
+  
   try {
-    let user = await UserProfile.findOne({ email });
-
-    if (user) {
-      return res.status(400).json({ msg: 'User already exists' });
-    }
-
-    user = new UserProfile({
+    const newUser = new UserProfile({
       firstName,
       lastName,
       email,
-      phone,
-      password,
+      password, // Ensure you hash the password before saving in a real application
     });
 
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(password, salt);
-
-    await user.save();
-
-    const payload = {
-      user: {
-        id: user.id
-      }
-    };
-
-    jwt.sign(payload, jwtSecret, { expiresIn: '5 days' }, (err, token) => {
-      if (err) throw err;
-      res.json({ token });
-    });
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server error',err.message);
-  }
-});
-
-app.post('/api/auth', [
-  check('email', 'Please include a valid email').isEmail(),
-  check('password', 'Password is required').exists()
-], async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
-  const { email, password } = req.body;
-
-  try {
-    let user = await UserProfile.findOne({ email });
-
-    if (!user) {
-      return res.status(400).json({ msg: 'Invalid Credentials' });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    if (!isMatch) {
-      return res.status(400).json({ msg: 'Invalid Credentials' });
-    }
-
-    const payload = {
-      user: {
-        id: user.id
-      }
-    };
-
-    jwt.sign(payload, jwtSecret, { expiresIn: '5 days' }, (err, token) => {
-      if (err) throw err;
-      res.json({ token });
-    });
+    await newUser.save();
+    res.status(201).json(newUser);
   } catch (err) {
     console.error(err.message);
     res.status(500).send('Server error');
   }
 });
 
-app.post('/api/generate-meal-plan', async (req, res) => {
-  const { age, weight, height, gender, goal, diet, calorieIntake, mealsPerDay, activityLevel } = req.body;
+app.get('/api/generate-meal-plan', async (req, res) => {
+  const { prompt } = req.query;
+  // const { age, weight, height, gender, goal, diet, calorieIntake, mealsPerDay, activityLevel } = req.body;
+
 
   const example_json_op = {
     "meals": [
@@ -315,17 +247,25 @@ app.post('/api/generate-meal-plan', async (req, res) => {
         }
       }
     ]
-  }
+  };
+  const csv_op = `Breakfast
+- 100g Oats
+- 2 tablespoons Chia Seeds - 1 Banana
+- 1 cup Blueberries Calories: 500
+Lunch/Dinner
+- 200g Grilled Chicken Breast - 1 cup cooked Brown Rice
+- 2 cups Steamed Broccoli
+- 1 tsp Olive Oil
+Calories: 600`
+  // console.log('Received request body:', req.body);
 
-  console.log('Received request body:', req.body);
-
-  const prompt = `Generate a meal plan for a ${gender} aged ${age} with a weight of ${weight}kg and height of ${height}cm. The goal is ${goal}. Preferences: ${diet}. Total calories: ${calorieIntake}. Meals per day: ${mealsPerDay}. With Activity level: ${activityLevel}`;
-  console.log('PROMPT CONSTRUCTED :', prompt);
+  // const prompt = `Generate a meal plan for a ${gender} aged ${age} with a weight of ${weight}kg and height of ${height}cm. The goal is ${goal}. Preferences: ${diet}. Total calories: ${calorieIntake}. Meals per day: ${mealsPerDay}. With Activity level: ${activityLevel}`;
+  // console.log('PROMPT :', prompt);
 
   const messages = [
     {
       role: 'system',
-      content: `You are a meal planner that outputs meal plan with meals, snacks and macronutrients in a valid json. Only respond with this JSON data schema:${JSON.stringify(example_json_op)}`,
+      content: `You are a meal planner that outputs meal plan with meals, snacks and macronutrients. Only respond with this output by meal type and ingredient list format as:${csv_op})}`,
     },
     {
       role: 'user',
@@ -333,74 +273,119 @@ app.post('/api/generate-meal-plan', async (req, res) => {
     },
   ];
 
+  console.log('Messages CONSTRUCTED :', messages);
+
+  res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      });
   try {
-    const completion = await openai.createChatCompletion({
-      model: 'gpt-4',
+    const stream = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
       messages: messages,
-      max_tokens: 7000,
+      stream: true,
     });
-    const responseText = completion.data.choices[0].message.content;
-    console.log('-->OPENAI response:', responseText);
 
-    const mealPlan = parseMealPlan(responseText);
+    for await (const chunk of stream) {
+      // console.log('CHUNK CONSTRUCTED :', JSON.stringify(chunk));
 
-    res.json(mealPlan);
-  } catch (error) {
-    console.error('Error generating chat completion:', error);
-    if (error.response) {
-      console.error('Response data:', error.response.data);
-      console.error('Response status:', error.response.status);
-      console.error('Response headers:', error.response.headers);
+      const content = chunk.choices[0]?.delta?.content || '';
+      if (content) {
+        res.write(`data: ${content}\n\n`);
+      }
     }
-    res.status(500).send('Error generating chat completion');
+
+    res.write('data: [DONE]\n\n');
+    res.end();
+  } catch (error) {
+    console.error('Error:', error);
+    res.write(`data: Error: ${error.message}\n\n`);
+    res.end();
   }
+  
+
 });
 
-function parseMealPlan(responseText) {
-  const response = JSON.parse(responseText);
-  console.log('-->PARSED RESONSE :', response);
+// function parseMealPlan(responseText) {
+//   const response = JSON.parse(responseText);
+//   console.log('-->PARSED RESPONSE :', response);
 
-  const mealPlan = {
-    meals: [], snacks: [],
-    monday: [], tuesday:[], wednesday:[], thursday:[], friday:[], saturday:[], sunday:[]
-  };
+//   const mealPlan = { meals: [], snacks: [], monday: [], tuesday: [], wednesday: [], thursday: [], friday: [], saturday: [], sunday: [] };
 
-  response.meals.forEach(meal => {
-    const mealDetails = {
-      name: meal.name,
-      items: meal.items,
-      calories: meal.calories,
-      macronutrients: meal.macronutrients
-    };
+//   response.meals.forEach(meal => {
+//     const mealDetails = {
+//       name: meal.name,
+//       items: meal.items,
+//       calories: meal.calories,
+//       macronutrients: meal.macronutrients
+//     };
 
-    if (meal.name.toLowerCase() === 'snack') {
-      mealPlan.snacks.push(mealDetails);
-    } else {
-      mealPlan.meals.push(mealDetails);
-    }
-  });
+//     if (meal.name.toLowerCase() === 'snack') {
+//       mealPlan.snacks.push(mealDetails);
+//     } else {
+//       mealPlan.meals.push(mealDetails);
+//     }
+//   });
 
-  if (response.meals) {
-    ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].forEach(day => {
-      if (response[day]) {
-        response[day].forEach(meal => {
-          const mealDetails = {
-            name: meal.name,
-            items: meal.items,
-            calories: meal.calories,
-            macronutrients: meal.macronutrients
-          };
-          mealPlan[day].push(mealDetails);
-        });
-      }
-    });
-  }
+//   if (response.meals) {
+//     ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].forEach(day => {
+//       if (response[day]) {
+//         response[day].forEach(meal => {
+//           const mealDetails = {
+//             name: meal.name,
+//             items: meal.items,
+//             calories: meal.calories,
+//             macronutrients: meal.macronutrients
+//           };
+//           mealPlan[day].push(mealDetails);
+//         });
+//       }
+//     });
+//   }
 
-  console.log('-->CONSTRUCTED mealPlan', mealPlan);
+//   console.log('-->CONSTRUCTED mealPlan', mealPlan);
 
-  return mealPlan;
-}
+//   return mealPlan;
+// }
 
-app.listen(5050, () => {
-  console.log('Server running on port 5050');
+// app.listen(5050, () => {
+//   console.log('Server running on port 5050');
+// });
+
+// app.get('/api/generate-meal-plan', async (req, res) => {
+//   const { prompt } = req.query;
+
+//   res.writeHead(200, {
+//     'Content-Type': 'text/event-stream',
+//     'Cache-Control': 'no-cache',
+//     'Connection': 'keep-alive',
+//   });
+
+//   try {
+//     const stream = await openai.chat.completions.create({
+//       model: 'gpt-3.5-turbo',
+//       messages: [{ role: 'user', content: prompt }],
+//       stream: true,
+//     });
+
+//     for await (const chunk of stream) {
+//       const content = chunk.choices[0]?.delta?.content || '';
+//       if (content) {
+//         res.write(`data: ${content}\n\n`);
+//       }
+//     }
+
+//     res.write('data: [DONE]\n\n');
+//     res.end();
+//   } catch (error) {
+//     console.error('Error:', error);
+//     res.write(`data: Error: ${error.message}\n\n`);
+//     res.end();
+//   }
+// });
+
+const PORT = process.env.PORT || 5050;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
