@@ -1,50 +1,76 @@
 import React from 'react';
-import { Paper, Typography, List, ListItem, ListItemText, ListItemAvatar, Avatar, Box, Grid } from '@mui/material';
+import { Grid, Card, CardContent, Typography, CardMedia } from '@mui/material';
+import { styled } from '@mui/system';
 
-const weeklyMeals = {
-  monday: [
-    { name: 'Breakfast', calories: 517, items: [{ name: 'Oatmeal banana pancakes', servings: '2 pancakes', img: 'oatmeal.jpg' }, { name: 'Cinnamon Banana Mug Cake', servings: '1 serving', img: 'mugcake.jpg' }] },
-    { name: 'Lunch', calories: 492, items: [{ name: 'Vanilla Banana Protein Shake', servings: '1 serving', img: 'shake.jpg' }, { name: 'Peach and Peanut Butter Snack', servings: '1 serving', img: 'peachsnack.jpg' }] },
-    { name: 'Dinner', calories: 676, items: [{ name: 'Mushroom, Spinach, and Tomato Pita Pizza', servings: '1 serving', img: 'pizza.jpg' }, { name: 'Green Pea & Almond Salad', servings: '1 serving', img: 'salad.jpg' }] },
-    { name: 'Snack', calories: 249, items: [{ name: 'Turkey, Ham, and Avocado on Rye', servings: '1 sandwich', img: 'sandwich.jpg' }] }
-  ],
-  tuesday: [
-    { name: 'Breakfast', calories: 517, items: [{ name: 'Oatmeal banana pancakes', servings: '2 pancakes', img: 'oatmeal.jpg' }, { name: 'Cinnamon Banana Mug Cake', servings: '1 serving', img: 'mugcake.jpg' }] },
-    { name: 'Lunch', calories: 492, items: [{ name: 'Vanilla Banana Protein Shake', servings: '1 serving', img: 'shake.jpg' }, { name: 'Peach and Peanut Butter Snack', servings: '1 serving', img: 'peachsnack.jpg' }] },
-    { name: 'Dinner', calories: 676, items: [{ name: 'Mushroom, Spinach, and Tomato Pita Pizza', servings: '1 serving', img: 'pizza.jpg' }, { name: 'Green Pea & Almond Salad', servings: '1 serving', img: 'salad.jpg' }] },
-    { name: 'Snack', calories: 249, items: [{ name: 'Turkey, Ham, and Avocado on Rye', servings: '1 sandwich', img: 'sandwich.jpg' }] }
-  ],
-  // Add meals for other days...
+const mealTimes = ['Morning', 'Noon', 'Evening'];
+const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+const meals = {
+  Monday: {
+    Morning: { name: 'Your Basic Low Carb Breakfast', calories: 400, img: 'link_to_image' },
+    Noon: { name: 'Curry Chicken Salad', calories: 500, img: 'link_to_image' },
+    Evening: { name: 'Quick Goan Fish Curry', calories: 600, img: 'link_to_image' }
+  },
+  Tuesday: {
+    Morning: { name: 'Coconut Bliss Smoothie', calories: 300, img: 'link_to_image' },
+    Noon: { name: 'Spanish style salmon fillets', calories: 400, img: 'link_to_image' },
+    Evening: { name: 'Boiled Egg Curry', calories: 500, img: 'link_to_image' }
+  },
+  // Add more days and meals here...
 };
+
+const WeeklyMealListContainer = styled(Grid)(({ theme }) => ({
+  marginTop: theme.spacing(2),
+}));
+
+const MealCard = styled(Card)(({ theme }) => ({
+  minWidth: 200,
+  margin: theme.spacing(1),
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'space-between'
+}));
 
 const WeeklyMealList = () => {
   return (
-    <Box mt={2}>
-      <Grid container spacing={2}>
-        {Object.entries(weeklyMeals).map(([day, meals], index) => (
-          <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
-            <Typography variant="h6" sx={{ textTransform: 'capitalize', marginBottom: '16px' }}>
-              {day}
-            </Typography>
-            {meals.map((meal, idx) => (
-              <Paper key={idx} elevation={3} sx={{ padding: '20px', marginBottom: '20px' }}>
-                <Typography variant="subtitle1">{meal.name} ({meal.calories} Calories)</Typography>
-                <List>
-                  {meal.items.map((item, itemIdx) => (
-                    <ListItem key={itemIdx}>
-                      <ListItemAvatar>
-                        <Avatar alt={item.name} src={`/static/images/meals/${item.img}`} />
-                      </ListItemAvatar>
-                      <ListItemText primary={item.name} secondary={item.servings} />
-                    </ListItem>
-                  ))}
-                </List>
-              </Paper>
+    <WeeklyMealListContainer container spacing={2}>
+      <Grid item xs={12}>
+        <Grid container justifyContent="space-between">
+          {daysOfWeek.map(day => (
+            <Grid item key={day} xs>
+              <Typography variant="h6" align="center">{day}</Typography>
+            </Grid>
+          ))}
+        </Grid>
+      </Grid>
+      {mealTimes.map(time => (
+        <Grid item xs={12} key={time}>
+          <Grid container justifyContent="space-between">
+            {daysOfWeek.map(day => (
+              <Grid item key={day} xs>
+                <MealCard>
+                  {meals[day][time] && (
+                    <>
+                      <CardMedia
+                        component="img"
+                        height="140"
+                        image={meals[day][time].img || 'default_image_link'}
+                        alt={meals[day][time].name}
+                      />
+                      <CardContent>
+                        <Typography variant="subtitle1">{time} ({meals[day][time].calories} Calories)</Typography>
+                        <Typography variant="body2">{meals[day][time].name || 'No Meal'}</Typography>
+                      </CardContent>
+                    </>
+                  )}
+                </MealCard>
+              </Grid>
             ))}
           </Grid>
-        ))}
-      </Grid>
-    </Box>
+        </Grid>
+      ))}
+    </WeeklyMealListContainer>
   );
 };
 

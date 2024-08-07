@@ -8,19 +8,33 @@ import { Tabs, Tab, AppBar, Box ,Typography } from '@mui/material';
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-export function MealPlan({ mealPlan }) {
+export function MealPlan() {
   const [visible, setVisible] = useState(false);
   const [tabIndex, setTabIndex] = useState(0);
+  const [mealPlan, setMealPlan] = useState(null);
+  const [partialMealPlan, setPartialMealPlan] = useState([]);
 
   useEffect(() => {
     setVisible(true);
+    const eventSource = new EventSource('/api/generate-meal-plan');
+    eventSource.onmessage = (event) => {
+      const newMealPlan = JSON.parse(event.data);
+      setPartialMealPlan((prev) => [...prev, newMealPlan]);
+    };
+    eventSource.onerror = (error) => {
+      console.error('EventSource error:', error);
+      eventSource.close();
+    };
+    return () => {
+      eventSource.close();
+    };
   }, []);
 
   const handleTabChange = (event, newValue) => {
     setTabIndex(newValue);
   };
 
-  const macronutrients = mealPlan.macronutrients || {
+  const macronutrients = mealPlan?.macronutrients || {
     protein: 30,
     carbs: 50,
     fat: 20,
@@ -51,7 +65,7 @@ export function MealPlan({ mealPlan }) {
           </div>
           <div className="meal-details">
             <h2>Meals:</h2>
-            {mealPlan.meals.map((meal, index) => (
+            {partialMealPlan.map((meal, index) => (
               <div key={index}>
                 <h3>{meal.name}</h3>
                 <ul>
@@ -62,7 +76,7 @@ export function MealPlan({ mealPlan }) {
                 <p>Calories: {meal.calories}</p>
               </div>
             ))}
-            {mealPlan.snacks.length > 0 && (
+            {mealPlan?.snacks?.length > 0 && (
               <div>
                 <h2>Snacks (optional):</h2>
                 <ul>
@@ -103,4 +117,3 @@ function TabPanel(props) {
 }
 
 export default MealPlan;
-
