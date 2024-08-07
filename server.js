@@ -5,7 +5,7 @@ require('dotenv').config();
 const bodyParser = require('body-parser');
 const connectDB = require('./db');
 const UserProfile = require('./models/UserProfile');
-
+const { makeStreamingJsonRequest } = require('http-streaming-request');
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -13,8 +13,6 @@ app.use(express.json());
 const openai = new OpenAI({
   apiKey: process.env.OPEN_AI_KEY,
 });
-
-
 
 
 // app.use(bodyParser.json());
@@ -46,252 +44,140 @@ app.post('/api/user', async (req, res) => {
 
 app.get('/api/generate-meal-plan', async (req, res) => {
   const { prompt } = req.query;
-  // const { age, weight, height, gender, goal, diet, calorieIntake, mealsPerDay, activityLevel } = req.body;
+  const p = JSON.parse(prompt);
+  const { age, weight, height, gender, goal, diet, calorieIntake, mealsPerDay, activityLevel } = p;
 
-
-  const example_json_op = {
-    "meals": [
-      {
-        "name": "Breakfast",
-        "items": [
-          "2 Boiled Eggs",
-          "1 Whole Wheat Toast",
-          "1/2 Avocado",
-          "1 cup of Mixed Berries"
-        ],
-        "calories": 400,
-        "macronutrients": {
-          "protein": 30,
-          "carbs": 50,
-          "fat": 20
-        }
-      },
-      {
-        "name": "Lunch/Dinner",
-        "items": [
-          "Grilled Chicken Breast (200g)",
-          "Quinoa (1/2 cup cooked)",
-          "Roasted Vegetables (1 cup)",
-          "Mixed Green Salad with Olive Oil and Balsamic Vinegar"
-        ],
-        "calories": 460,
-        "macronutrients": {
-          "protein": 30,
-          "carbs": 50,
-          "fat": 20
-        }
+  console.log('PROMPT :', JSON.stringify(p));
+  console.log("age, weight, height, gender, goal, diet, calorieIntake, mealsPerDay, activityLevel", age, weight, height, gender, goal, diet, calorieIntake, mealsPerDay, activityLevel);
+  // const ex_op= "Breakfast\n
+  // - 100g Oats\n
+  // - 2 tablespoons Chia Seeds\n
+  // - 1 Banana\n
+  // - 1 cup Blueberries\n
+  // Calories: 500\n
+  // \n
+  // Lunch/Dinner\n
+  // - 200g Grilled Chicken Breast\n
+  // - 1 cup cooked Brown Rice\n
+  // - 2 cups Steamed Broccoli\n
+  // - 1 tsp Olive Oil\n
+  // Calories: 600\n";
+  const ex_json={ "meals": [
+    {
+      "name": "Breakfast",
+      "items": [
+        "2 Boiled Eggs",
+        "1 Whole Wheat Toast",
+        "1/2 Avocado",
+        "1 cup of Mixed Berries"
+      ],
+      "calories": 400,
+      "macronutrients": {
+        "protein": 30,
+        "carbs": 50,
+        "fat": 20
       }
-    ],
-    "snacks": [
-      {
-        "item": "1 small apple",
-        "calories": 80,
-        "macronutrients": {
-          "protein": 30,
-          "carbs": 50,
-          "fat": 20
-        }
+    },
+    {
+      "name": "Lunch",
+      "items": [
+        "Grilled Chicken Breast (200g)",
+        "Quinoa (1/2 cup cooked)",
+        "Roasted Vegetables (1 cup)",
+        "Mixed Green Salad with Olive Oil and Balsamic Vinegar"
+      ],
+      "calories": 460,
+      "macronutrients": {
+        "protein": 30,
+        "carbs": 50,
+        "fat": 20
       }
-    ],
-    "monday": [
-      {
-        "name": "Breakfast",
-        "items": ["Oatmeal", "Banana"],
-        "calories": 300,
-        "macronutrients": {
-          "protein": 30,
-          "carbs": 50,
-          "fat": 20
-        }
-      },
-      {
-        "name": "Lunch",
-        "items": ["Grilled Chicken", "Salad"],
-        "calories": 400,
-        "macronutrients": {
-          "protein": 30,
-          "carbs": 50,
-          "fat": 20
-        }
+    },
+    {
+      "name": "Dinner",
+      "items": [
+        "Grilled Chicken Breast (200g)",
+        "Quinoa (1/2 cup cooked)",
+        "Roasted Vegetables (1 cup)",
+        "Mixed Green Salad with Olive Oil and Balsamic Vinegar"
+      ],
+      "calories": 460,
+      "macronutrients": {
+        "protein": 30,
+        "carbs": 50,
+        "fat": 20
       }
-    ],
-    "tuesday": [
-      {
-        "name": "Breakfast",
-        "items": ["Smoothie"],
-        "calories": 250,
-        "macronutrients": {
-          "protein": 30,
-          "carbs": 50,
-          "fat": 20
-        }
-      },
-      {
-        "name": "Lunch",
-        "items": ["Turkey Sandwich", "Carrot Sticks"],
-        "calories": 350,
-        "macronutrients": {
-          "protein": 30,
-          "carbs": 50,
-          "fat": 20
-        }
-      }
-    ],
-    "wednesday": [
-      {
-        "name": "Breakfast",
-        "items": ["Yogurt", "Granola"],
-        "calories": 200,
-        "macronutrients": {
-          "protein": 30,
-          "carbs": 50,
-          "fat": 20
-        }
-      },
-      {
-        "name": "Lunch",
-        "items": ["Salmon", "Quinoa"],
-        "calories": 450,
-        "macronutrients": {
-          "protein": 30,
-          "carbs": 50,
-          "fat": 20
-        }
-      }
-    ],
-    "thursday": [
-      {
-        "name": "Breakfast",
-        "items": ["Pancakes", "Strawberries"],
-        "calories": 300,
-        "macronutrients": {
-          "protein": 30,
-          "carbs": 50,
-          "fat": 20
-        }
-      },
-      {
-        "name": "Lunch",
-        "items": ["Chicken Wrap", "Apple Slices"],
-        "calories": 400,
-        "macronutrients": {
-          "protein": 30,
-          "carbs": 50,
-          "fat": 20
-        }
-      }
-    ],
-    "friday": [
-      {
-        "name": "Breakfast",
-        "items": ["Eggs", "Toast"],
-        "calories": 250,
-        "macronutrients": {
-          "protein": 30,
-          "carbs": 50,
-          "fat": 20
-        }
-      },
-      {
-        "name": "Lunch",
-        "items": ["Beef Stir Fry", "Brown Rice"],
-        "calories": 500,
-        "macronutrients": {
-          "protein": 30,
-          "carbs": 50,
-          "fat": 20
-        }
-      }
-    ],
-    "saturday": [
-      {
-        "name": "Breakfast",
-        "items": ["Smoothie Bowl"],
-        "calories": 300,
-        "macronutrients": {
-          "protein": 30,
-          "carbs": 50,
-          "fat": 20
-        }
-      },
-      {
-        "name": "Lunch",
-        "items": ["Grilled Cheese", "Tomato Soup"],
-        "calories": 350,
-        "macronutrients": {
-          "protein": 30,
-          "carbs": 50,
-          "fat": 20
-        }
-      }
-    ],
-    "sunday": [
-      {
-        "name": "Breakfast",
-        "items": ["French Toast", "Blueberries"],
-        "calories": 350,
-        "macronutrients": {
-          "protein": 30,
-          "carbs": 50,
-          "fat": 20
-        }
-      },
-      {
-        "name": "Lunch",
-        "items": ["Chicken Salad"],
-        "calories": 400,
-        "macronutrients": {
-          "protein": 30,
-          "carbs": 50,
-          "fat": 20
-        }
-      }
-    ]
-  };
-  const csv_op = `Breakfast
-- 100g Oats
-- 2 tablespoons Chia Seeds - 1 Banana
-- 1 cup Blueberries Calories: 500
-Lunch/Dinner
-- 200g Grilled Chicken Breast - 1 cup cooked Brown Rice
-- 2 cups Steamed Broccoli
-- 1 tsp Olive Oil
-Calories: 600`
-  // console.log('Received request body:', req.body);
-
-  // const prompt = `Generate a meal plan for a ${gender} aged ${age} with a weight of ${weight}kg and height of ${height}cm. The goal is ${goal}. Preferences: ${diet}. Total calories: ${calorieIntake}. Meals per day: ${mealsPerDay}. With Activity level: ${activityLevel}`;
-  // console.log('PROMPT :', prompt);
-
+    }
+  ]
+  }
+  const prompt1 = `Generate a meal plan for a ${gender} aged ${age} with a weight of ${weight}kg and height of ${height}cm. The goal is ${goal}. Preferences: ${diet}. Total calories: ${calorieIntake}. Meals per day: ${mealsPerDay}. With Activity level: ${activityLevel}`;
+  console.log('PROMPT CONSTRUCTED :', prompt1);
   const messages = [
     {
       role: 'system',
-      content: `You are a meal planner that outputs meal plan with meals, snacks and macronutrients. Only respond with this output by meal type and ingredient list format as:${csv_op})}`,
+      content: `You are a meal planner that outputs meal plan with meals and macronutrients in a valid json. Only respond with this JSON data schema:${JSON.stringify(ex_json)}`,
+
     },
     {
       role: 'user',
-      content: prompt,
+      content: prompt1,
     },
   ];
 
-  console.log('Messages CONSTRUCTED :', messages);
+  console.log('Messages CONSTRUCTED :', JSON.stringify(messages));
 
   res.writeHead(200, {
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-      });
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+  });
+
   try {
+   
+    // const stream = await openai.chat.completions.create({
+    //   model: "gpt-3.5-turbo",
+    //   stream: true,
+    //   messages: messages,
+    // });
+  
+    // let data = ''; // To accumulate the chunks of response data
+  
+    // for await (const chunk of stream) {
+    //   const chunk1 = chunk.choices[0].delta.content || "";
+    //   data += chunk1// accumulate
+  
+    //   const endIndex = data.indexOf('}');
+    //   if (endIndex !== -1) {
+    //     const startIndex = data.indexOf('{');
+  
+    //     const jsonObject = data.slice(startIndex, endIndex + 1); // Extract the JSON object
+    //     data = data.slice(endIndex + 1); // Remove the extracted JSON object from the accumulated data
+    //     try {
+    //       const parsedObject = JSON.parse(jsonObject);
+    //       console.log(parsedObject); // Handle the parsed JSON object here
+    //       res.write(jsonObject);
+  
+    //       // Make an API call
+    //     } catch (err) {
+    //       console.error('Error while parsing JSON:', err);
+    //     }
+    //   }
+    // }
     const stream = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4',
       messages: messages,
       stream: true,
     });
 
     for await (const chunk of stream) {
-      // console.log('CHUNK CONSTRUCTED :', JSON.stringify(chunk));
-
       const content = chunk.choices[0]?.delta?.content || '';
+      // console.log('-->PARSED content :', content);
+
       if (content) {
+        // let revertedContent = content.slice(-1)==','?content.slice(-1).replace(",", ",\"\""):content;
+        // // revertedContent=revertedContent.replace(/\\/g, '//');
+        // // revertedContent=revertedContent.replace('//', '\\\\');
+        // console.log("---revertedTestData2: ",revertedContent);
         res.write(`data: ${content}\n\n`);
       }
     }
@@ -303,8 +189,6 @@ Calories: 600`
     res.write(`data: Error: ${error.message}\n\n`);
     res.end();
   }
-  
-
 });
 
 // function parseMealPlan(responseText) {
