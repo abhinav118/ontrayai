@@ -12,7 +12,7 @@ app.use(express.json());
 
 const openai = new OpenAI({
   apiKey: process.env.OPEN_AI_KEY,
-});
+
 
 
 // app.use(bodyParser.json());
