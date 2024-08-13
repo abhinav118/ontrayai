@@ -6,13 +6,15 @@ const bodyParser = require('body-parser');
 const connectDB = require('./db');
 const UserProfile = require('./models/UserProfile');
 const { makeStreamingJsonRequest } = require('http-streaming-request');
+const { OpenAiHandler, StreamMode } = require('openai-partial-stream');
+
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 const openai = new OpenAI({
   apiKey: process.env.OPEN_AI_KEY,
-
+});
 
 
 // app.use(bodyParser.json());
@@ -133,53 +135,35 @@ app.get('/api/generate-meal-plan', async (req, res) => {
   });
 
   try {
-   
-    // const stream = await openai.chat.completions.create({
-    //   model: "gpt-3.5-turbo",
-    //   stream: true,
-    //   messages: messages,
-    // });
-  
-    // let data = ''; // To accumulate the chunks of response data
-  
-    // for await (const chunk of stream) {
-    //   const chunk1 = chunk.choices[0].delta.content || "";
-    //   data += chunk1// accumulate
-  
-    //   const endIndex = data.indexOf('}');
-    //   if (endIndex !== -1) {
-    //     const startIndex = data.indexOf('{');
-  
-    //     const jsonObject = data.slice(startIndex, endIndex + 1); // Extract the JSON object
-    //     data = data.slice(endIndex + 1); // Remove the extracted JSON object from the accumulated data
-    //     try {
-    //       const parsedObject = JSON.parse(jsonObject);
-    //       console.log(parsedObject); // Handle the parsed JSON object here
-    //       res.write(jsonObject);
-  
-    //       // Make an API call
-    //     } catch (err) {
-    //       console.error('Error while parsing JSON:', err);
-    //     }
-    //   }
-    // }
     const stream = await openai.chat.completions.create({
-      model: 'gpt-4',
       messages: messages,
-      stream: true,
+      model: "gpt-4", // OR "gpt-4"
+      stream: true, // ENABLE STREAMING
+      // temperature: 1,
+      // functions: [
+      //   {
+      //     name: "say_hello",
+      //     description: "say hello",
+      //     parameters: {
+      //       type: "object",
+      //       properties: {
+      //         sentence: {
+      //           type: "string",
+      //           description: "The sentence generated",
+      //         },
+      //       },
+      //     },
+      //   },
+      // ],
+      // function_call: { name: "say_hello" },
     });
-
-    for await (const chunk of stream) {
-      const content = chunk.choices[0]?.delta?.content || '';
-      // console.log('-->PARSED content :', content);
-
-      if (content) {
-        // let revertedContent = content.slice(-1)==','?content.slice(-1).replace(",", ",\"\""):content;
-        // // revertedContent=revertedContent.replace(/\\/g, '//');
-        // // revertedContent=revertedContent.replace('//', '\\\\');
-        // console.log("---revertedTestData2: ",revertedContent);
-        res.write(`data: ${content}\n\n`);
-      }
+    
+    const openAiHandler =  new OpenAiHandler(StreamMode.StreamObjectKeyValueTokens);
+    const entityStream = openAiHandler.process(stream);
+    
+    for await (const item of entityStream) {
+      console.log('ITEM:', item, "-->", JSON.stringify(item.data));
+      res.write(`data: ${JSON.stringify(item.data)}\n\n`);
     }
 
     res.write('data: [DONE]\n\n');
