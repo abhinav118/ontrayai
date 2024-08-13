@@ -34,25 +34,33 @@ function InputForm() {
     let prev='',a;
     try {
       const eventSource = new EventSource(`http://localhost:5050/api/generate-meal-plan?prompt=${encodeURIComponent(JSON.stringify(profile))}`);
-      const jsonResponseFromGPT = // your partially streamed JSON response from GPT;
+      // const jsonResponseFromGPT = // your partially streamed JSON response from GPT;
       eventSource.onmessage = (event) => {
         if (event.data === '[DONE]') {
           eventSource.close();
           setLoading(false);
         } else {
-          prev = prev + event.data;
-          const completeJsonString = JSONAutocomplete(prev);
+          const data = JSON.parse(event.data);
+          console.log("---data: ",JSON.stringify(data));
+
+        // if (data.name && data.hex) {
+        //   setColors((prevColors) => [...prevColors, { name: data.name, hex: data.hex }]);
+        // }
+          // prev = prev + data;
+          // console.log("---prev: ",(prev));
+          setMealPlan((data));
+          // const completeJsonString = JSONAutocomplete(prev);
           // const parsedJson = JSON.parse(completeJsonString);
-          if (completeJsonString) {
+        //   if (prev) {
             
-            try {
-                a = JSON.parse(completeJsonString);
-                console.log(completeJsonString,"---parsedJson: ",a);
-                setMealPlan(a);
-            } catch (e) {
-                return console.error(e); // error in the above string (in this case, yes)!
-            }
-        }
+        //     try {
+        //         a = prev;
+        //         console.log(prev,"---parsedJson: ",JSON.stringify(a));
+        //         setMealPlan(a);
+        //     } catch (e) {
+        //         return console.error(e); // error in the above string (in this case, yes)!
+        //     }
+        // }
           // console.log("---parsedJson: ",parsedJson,completeJsonString);
          
           setResponse((prevResponse) => prevResponse + event.data);
@@ -138,27 +146,34 @@ function InputForm() {
           </Button>
         </Box>
       </form>
-      
-      {mealPlan && mealPlan.meals && (
-        <Box sx={{ mt: 5  }}>
-          {mealPlan.meals.map((meal, index) => (
-            <Paper key={index} sx={{ p: 1, mb: 1 }}>
-              <Typography variant="h6">{meal.name && meal.name}</Typography>
-              <Typography><ul>
-                  {meal.items && meal.items.map((item, idx) => (
-                    <li key={idx}>{item}</li>
-                  ))}
-                </ul></Typography>
-                <Typography>Calories: {meal.calories}</Typography>
-              {/* <Typography>{meal.food}</Typography>
-              <Typography>Calories: {meal.calories}</Typography>
-              <Typography>Carbohydrates: {meal.carbohydrates}</Typography>
-              <Typography>Proteins: {meal.proteins}</Typography>
-              <Typography>Fats: {meal.fats}</Typography> */}
-            </Paper> 
-           ))} 
-       </Box>
-       )}
+      <div>
+      {mealPlan && Array.isArray(mealPlan.meals) ? (
+        mealPlan.meals.length > 0 ? (
+          mealPlan.meals.map((meal, index) => (
+            meal && Object.keys(meal).length > 0 ? (
+              <div key={index} className="meal-block" style={{ backgroundColor: meal.color || 'beige' }}>
+                <div className="meal-content">
+                  <Typography variant="h6" className="meal-name">{meal.name || 'Unnamed Meal'}</Typography>
+                  <Typography className="meal-description">{meal.description || ''}</Typography>
+                  <ul className="meal-items">
+                    {Array.isArray(meal.items) ? meal.items.map((item, idx) => (
+                      <li key={idx} className="meal-item">{item}</li>
+                    )) : <li className="meal-item">No items available</li>}
+                  </ul>
+                  <Typography className="meal-calories">Calories: {meal.calories || 'N/A'}</Typography>
+                </div>
+              </div>
+            ) : (
+              <Typography key={index}>Invalid meal data</Typography>
+            )
+          ))
+        ) : (
+          <Typography>No meals found.</Typography>
+        )
+      ) : (
+        <Typography>No meal plan available.</Typography>
+      )}
+    </div>
     </Paper>
   );
 }
