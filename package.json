@@ -28,8 +28,8 @@
         "jsonwebtoken": "^9.0.2",
         "mongoose": "^8.5.1",
         "openai": "^4.54.0",
-        "react-chartjs-2": "^3.0.3",
-        "react-scripts": "^5.0.1"
+        "openai-partial-stream": "^0.3.9",
+        "react-chartjs-2": "^3.0.3"
     },
     "devDependencies": {
         "concurrently": "^8.2.2",
